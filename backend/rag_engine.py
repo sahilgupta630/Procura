@@ -28,8 +28,13 @@ Instructions:
 
 If the information is not in the context, you must state: 'I cannot find the specific procedure in the documents, please consult the SRIC department.' Do not invent information."""
 
-    def initialize(self):
-        """Initialize the RAG system components."""
+    def initialize(self) -> bool:
+        """
+        Initialize the RAG system components including embeddings, vector store, and LLM.
+
+        Returns:
+            bool: True if initialization was successful, False otherwise.
+        """
         try:
             if not self.faiss_db_path.exists():
                 raise FileNotFoundError("Vector database not found! Please run the indexing script first.")
@@ -59,10 +64,6 @@ If the information is not in the context, you must state: 'I cannot find the spe
                 search_kwargs={"k": self.retrieval_k}
             )
             
-            # Initialize Gemini model for Embeddings (already passed to vectorstore implicitly via embeddings object if needed, but here we just used these vars)
-            # We don't need genai.configure for LangChain embeddings usually if env var is set, 
-            # but let's keep the embedding initialization clean.
-            
             # Initialize Groq Model
             self.model = ChatGroq(
                 groq_api_key=groq_api_key,
@@ -75,8 +76,17 @@ If the information is not in the context, you must state: 'I cannot find the spe
             print(f"Error initializing RAG system: {e}")
             return False
 
-    def query(self, user_query, conversation_history=None):
-        """Process a user query."""
+    def query(self, user_query: str, conversation_history: list[dict] = None) -> dict:
+        """
+        Process a user query using the RAG pipeline.
+
+        Args:
+            user_query (str): The user's question.
+            conversation_history (list[dict], optional): List of previous message dictionaries. Defaults to None.
+
+        Returns:
+            dict: A dictionary containing the 'answer' string and 'sources' list.
+        """
         if not self.model or not self.retriever:
              if not self.initialize():
                  return {"answer": "System not initialized and failed to start.", "sources": []}
